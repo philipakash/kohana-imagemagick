@@ -94,7 +94,48 @@ class Image_ImageMagick extends Image
         return FALSE;
     }
 
-    protected function _do_crop($width, $height, $offset_x, $offset_y){}
+    /**
+     * Do crop
+     * 
+     * @param integer $width
+     * @param integer $height
+     * @param integer $offset_x
+     * @param integer $offset_y 
+     */
+    protected function _do_crop($width, $height, $offset_x, $offset_y)
+    {
+        $filein = ( ! is_null($this->filetmp) ) ? $this->filetmp : $this->file;
+
+        // Create a temporary file to store the new image
+        $fileout = tempnam(sys_get_temp_dir(), '');
+
+        $command = Image_ImageMagick::get_command('convert')." \"$filein\"";
+        $command .= ' -quality 100 -crop '.$width.'x'.$height.'+'.$offset_x.'+'.$offset_y;
+        $command .= ' "'.$fileout.'"';
+
+        exec($command, $response, $status);
+
+        if ( ! $status )
+        {
+            // Delete old tmp file if exist
+            if ( ! is_null($this->filetmp) )
+            {
+                unlink($this->filetmp);
+            }
+
+            // Get the image information
+            $info = $this->get_info($fileout);
+
+            // Update image data
+            $this->filetmp = $fileout;
+            $this->width = $info->width;
+            $this->height = $info->height;
+
+            return TRUE;
+        }
+
+        return FALSE;
+    }
 
     /**
      * Rotate image
