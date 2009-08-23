@@ -9,11 +9,11 @@
  */
 class Image_ImageMagick extends Image
 {
-    //path to ImageMagick binaries
+    // Path to ImageMagick binaries
     protected static $_imagemagick;
 
-    //temporary image data
-    protected $_image;
+    // Temporary image file
+    protected $filetmp;
     
     /**
      * Check if ImageMagick are installed
@@ -22,9 +22,9 @@ class Image_ImageMagick extends Image
      */
     public static function check()
     {
-        exec(Image_ImageMagick::$_imagemagick . '/convert', $response, $status);
+        exec(Image_ImageMagick::get_command('convert'), $response, $status);
 
-        if($status)
+        if ($status)
         {
             throw new Kohana_Exception('ImageMagick is not installed in :path, check your configuration', array(':path'=>Image_ImageMagick::$_imagemagick));
         }
@@ -39,10 +39,10 @@ class Image_ImageMagick extends Image
      */
     public function __construct($file)
     {
-        //load ImageMagick path from config
+        // Load ImageMagick path from config
         Image_ImageMagick::$_imagemagick = Kohana::Config('imagemagick')->path;
 
-        if(!is_dir(Image_ImageMagick::$_imagemagick))
+        if (! is_dir(Image_ImageMagick::$_imagemagick) )
         {
             throw new Kohana_Exception('ImageMagick path is not a valid directory, check your configuration');
         }
@@ -50,14 +50,50 @@ class Image_ImageMagick extends Image
         if ( ! Image_ImageMagick::$_checked)
         {
             // Run the install check
-             Image_ImageMagick::check();
+            Image_ImageMagick::check();
         }
 
         parent::__construct($file);
     }
 
+    /**
+     * Resize an image
+     *
+     * @param integer $width 
+     * @param integer $height
+     */
+    protected function _do_resize($width, $height)
+    {
+        $filein = ( ! is_null($this->filetmp) ) ? $this->filetmp : $this->file;
+        
+        // Create a temporary file to store the new image
+        $fileout = tempnam(sys_get_temp_dir(), '');
 
-    protected function _do_resize($width, $height) {}
+        $command = Image_ImageMagick::get_command('convert')." \"$filein\"";
+        $command .= ' -quality 100 -geometry '.$width.'x'.$height.'\!';
+        $command .= ' "'.$fileout.'"';
+
+        exec($command, $response, $status);
+
+        if ( ! $status )
+        {
+            // Delete old tmp file if exist
+            if ( ! is_null($this->filetmp) )
+            {
+                unlink($this->filetmp);
+            }
+
+            // Update image data
+            $this->filetmp = $fileout;
+            $this->width = $width;
+            $this->height = $height;
+
+            return TRUE;
+        }
+
+        return FALSE;
+    }
+
     protected function _do_crop($width, $height, $offset_x, $offset_y){}
     protected function _do_rotate($degrees){}
     protected function _do_flip($direction){}
@@ -74,18 +110,16 @@ class Image_ImageMagick extends Image
      */
     protected function _do_save($file, $quality)
     {
-        //if tmp image file not exist, use original
-        $filein = (!is_object($this->_image)) ? $this->file : $this->_image->file;
+        // If tmp image file not exist, use original
+        $filein =  (! is_null($this->filetmp) ) ? $this->filetmp : $this->file;
 
-        $command = Image_ImageMagick::$_imagemagick.'/convert "'.$filein.'"';
-
+        $command = Image_ImageMagick::get_command('convert')." \"$filein\"";
         $command .= (isset($quality)) ? ' -quality '.$quality : '';
-
         $command .= ' "'.$file.'"';
 
         exec($command, $response, $status);
 
-        if(!$status)
+        if (! $status )
         {
             return TRUE;
         }
@@ -104,21 +138,24 @@ class Image_ImageMagick extends Image
     {
         $tmpfile = tempnam(sys_get_temp_dir(), '');
 
-        //if tmp image file not exist, use original
-        $filein = (!is_object($this->_image)) ? $this->file : $this->_image->file;
+        // If tmp image file not exist, use original
+        $filein = ( ! is_null($this->filetmp) ) ? $this->filetmp : $this->file;
 
-        $command = Image_ImageMagick::$_imagemagick.'/convert "'.$filein.'"';
+        $command = Image_ImageMagick::get_command('convert')." \"$filein\"";
         $command .= (isset($quality)) ? ' -quality '.$quality : '';
         $command .= ' "'.strtoupper($type).':'.$tmpfile.'"';
 
         exec($command, $response, $status);
 
-        if(!$status)
+        if ( ! $status)
         {
             // Capture the output
             ob_start();
 
             readfile($tmpfile);
+
+            // Delete tmp file
+            unlink($tmpfile);
 
             return ob_get_clean();
         }
@@ -127,41 +164,23 @@ class Image_ImageMagick extends Image
     }
 
     /**
-     * Get and return file info
-     * 
-     * @param string $file path to file
-     * @return object file info 
+     * Return a especified command for the current OS
+     * @param string $command
+     * @return string command in current OS
      */
-    private function _get_info($file)
+    protected static function get_command($command)
     {
-        try
-        {
-            // Get the real path to the file
-            $file = realpath($file);
+        // Running OS
+        static $os;
 
-            // Get the image information
-            $info = getimagesize($file);
-        }
-        catch (Exception $e)
+        if ( is_null($os) )
         {
-            // Ignore all errors while reading the image
+            $os = (strtoupper(substr(php_uname(), 0, 3)) === 'WIN') ? 'windows' : 'unix';
         }
 
-        if (empty($file) OR empty($info))
-        {
-            throw new Kohana_Exception('Not an image or invalid image: :file',
-                    array(':file' => Kohana::debug_path($file)));
-        }
-
-        $return = new stdClass();
-
-        $return->file   = $file;
-        $return->width  = $info[0];
-        $return->height = $info[1];
-        $return->type   = $info[2];
-        $return->mime   = image_type_to_mime_type($return->type);
-
-        return $return;
+        $command = Image_ImageMagick::$_imagemagick.'/'.$command;
+        
+        return ($os == 'windows') ? $command.'.exe' : $command;
     }
 }
 
