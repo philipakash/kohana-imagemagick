@@ -138,7 +138,43 @@ class Image_ImageMagick extends Image
         return FALSE;
     }
 
-    protected function _do_flip($direction){}
+    /**
+     * Do flip
+     * 
+     * @param integer $direction Image::HORIZONTAL or Image::VERTICAL
+     */
+    protected function _do_flip($direction)
+    {
+        $flip_command = ($direction === Image::HORIZONTAL) ? '-flop': '-flip';
+
+        $filein = ( ! is_null($this->filetmp) ) ? $this->filetmp : $this->file;
+
+        // Create a temporary file to store the new image
+        $fileout = tempnam(sys_get_temp_dir(), '');
+
+        $command = Image_ImageMagick::get_command('convert')." \"$filein\"";
+        $command .= ' -quality 100 '.$flip_command;
+        $command .= ' "'.$fileout.'"';
+
+        exec($command, $response, $status);
+
+        if ( ! $status )
+        {
+            // Delete old tmp file if exist
+            if ( ! is_null($this->filetmp) )
+            {
+                unlink($this->filetmp);
+            }
+
+            // Update image data
+            $this->filetmp = $fileout;
+
+            return TRUE;
+        }
+
+        return FALSE;
+    }
+
     protected function _do_sharpen($amount){}
     protected function _do_reflection($height, $opacity, $fade_in){}
     protected function _do_watermark(Image $image, $offset_x, $offset_y, $opacity){}
