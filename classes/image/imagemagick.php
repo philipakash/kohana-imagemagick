@@ -95,7 +95,49 @@ class Image_ImageMagick extends Image
     }
 
     protected function _do_crop($width, $height, $offset_x, $offset_y){}
-    protected function _do_rotate($degrees){}
+
+    /**
+     * Rotate image
+     * 
+     * @param float $degrees 
+     */
+    protected function _do_rotate($degrees)
+    {
+        $filein = ( ! is_null($this->filetmp) ) ? $this->filetmp : $this->file;
+
+        // Create a temporary file to store the new image
+        $fileout = tempnam(sys_get_temp_dir(), '');
+
+        $command = Image_ImageMagick::get_command('convert')." \"$filein\"";
+        $command .= ' -quality 100 -matte -background none -rotate '.$degrees;
+        $command .= ' "PNG:'.$fileout.'"'; // Save as PNG for transparency
+
+        exec($command, $response, $status);
+
+        if ( ! $status )
+        {
+            // Delete old tmp file if exist
+            if ( ! is_null($this->filetmp) )
+            {
+                unlink($this->filetmp);
+            }
+
+            // Get the image information
+            $info = $this->get_info($fileout);
+
+            // Update image data
+            $this->filetmp = $fileout;
+            $this->width = $info->width;
+            $this->height = $info->height;
+            $this->type = $info->type;
+            $this->mime = $info->mime;
+
+            return TRUE;
+        }
+
+        return FALSE;
+    }
+
     protected function _do_flip($direction){}
     protected function _do_sharpen($amount){}
     protected function _do_reflection($height, $opacity, $fade_in){}
@@ -181,6 +223,56 @@ class Image_ImageMagick extends Image
         $command = Image_ImageMagick::$_imagemagick.'/'.$command;
         
         return ($os == 'windows') ? $command.'.exe' : $command;
+    }
+
+    /**
+     * Get and return file info
+     *
+     * @param string $file path to file
+     * @return object file info
+     */
+    private function get_info($file)
+    {
+        try
+        {
+            // Get the real path to the file
+            $file = realpath($file);
+
+            // Get the image information
+            $info = getimagesize($file);
+        }
+        catch (Exception $e)
+        {
+            // Ignore all errors while reading the image
+        }
+
+        if (empty($file) OR empty($info))
+        {
+            throw new Kohana_Exception('Not an image or invalid image: :file',
+                    array(':file' => Kohana::debug_path($file)));
+        }
+
+        $return = new stdClass();
+
+        $return->file   = $file;
+        $return->width  = $info[0];
+        $return->height = $info[1];
+        $return->type   = $info[2];
+        $return->mime   = image_type_to_mime_type($return->type);
+
+        return $return;
+    }
+
+    /**
+     * Class destructor
+     */
+    public function __destruct()
+    {
+        if ( ! is_null($this->filetmp) )
+        {
+            // Free all resources
+            unlink($this->filetmp);
+        }
     }
 }
 
