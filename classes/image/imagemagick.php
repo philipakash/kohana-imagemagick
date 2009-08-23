@@ -216,7 +216,47 @@ class Image_ImageMagick extends Image
         return FALSE;
     }
 
-    protected function _do_sharpen($amount){}
+    protected function _do_sharpen($amount)
+    {
+        //IM not support $amount under 5 (0.15)
+        $amount = ($amount < 5) ? 5 : $amount;
+
+        // Amount should be in the range of 0.0 to 3.0
+        $amount = ($amount * 3.0) / 100;
+
+        $filein = ( ! is_null($this->filetmp) ) ? $this->filetmp : $this->file;
+
+        // Create a temporary file to store the new image
+        $fileout = tempnam(sys_get_temp_dir(), '');
+
+        $command = Image_ImageMagick::get_command('convert')." \"$filein\"";
+        $command .= ' -quality 100 -sharpen 0x'.$amount;
+        $command .= ' "'.$fileout.'"';
+
+        exec($command, $response, $status);
+
+        if ( ! $status )
+        {
+            // Delete old tmp file if exist
+            if ( ! is_null($this->filetmp) )
+            {
+                unlink($this->filetmp);
+            }
+
+            // Get the image information
+            $info = $this->get_info($fileout);
+
+            // Update image data
+            $this->filetmp = $fileout;
+            $this->width = $info->width;
+            $this->height = $info->height;
+
+            return TRUE;
+        }
+
+        return FALSE;
+    }
+
     protected function _do_reflection($height, $opacity, $fade_in){}
     protected function _do_watermark(Image $image, $offset_x, $offset_y, $opacity){}
     protected function _do_background($r, $g, $b, $opacity){}
