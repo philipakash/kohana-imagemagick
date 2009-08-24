@@ -9,17 +9,16 @@
  */
 class Image_ImageMagick extends Image
 {
-    // Path to ImageMagick binaries
+    /**
+     * @var  string  path to ImageMagick binaries
+     */
     protected static $_imagemagick;
 
-    // Temporary image file
+    /**
+     * @var  string  temporary image file
+     */
     protected $filetmp;
     
-    /**
-     * Check if ImageMagick are installed
-     *
-     * @return boolean true if installed
-     */
     public static function check()
     {
         exec(Image_ImageMagick::get_command('convert'), $response, $status);
@@ -32,11 +31,6 @@ class Image_ImageMagick extends Image
         return Image_ImageMagick::$_checked = TRUE;
     }
 
-    /**
-     * Class constructor
-     *
-     * @param string $file path to file to load
-     */
     public function __construct($file)
     {
         // Load ImageMagick path from config
@@ -56,12 +50,6 @@ class Image_ImageMagick extends Image
         parent::__construct($file);
     }
 
-    /**
-     * Resize an image
-     *
-     * @param integer $width 
-     * @param integer $height
-     */
     protected function _do_resize($width, $height)
     {
         $filein = ( ! is_null($this->filetmp) ) ? $this->filetmp : $this->file;
@@ -94,14 +82,6 @@ class Image_ImageMagick extends Image
         return FALSE;
     }
 
-    /**
-     * Do crop
-     * 
-     * @param integer $width
-     * @param integer $height
-     * @param integer $offset_x
-     * @param integer $offset_y 
-     */
     protected function _do_crop($width, $height, $offset_x, $offset_y)
     {
         $filein = ( ! is_null($this->filetmp) ) ? $this->filetmp : $this->file;
@@ -137,11 +117,6 @@ class Image_ImageMagick extends Image
         return FALSE;
     }
 
-    /**
-     * Rotate image
-     * 
-     * @param float $degrees 
-     */
     protected function _do_rotate($degrees)
     {
         $filein = ( ! is_null($this->filetmp) ) ? $this->filetmp : $this->file;
@@ -179,11 +154,6 @@ class Image_ImageMagick extends Image
         return FALSE;
     }
 
-    /**
-     * Do flip
-     * 
-     * @param integer $direction Image::HORIZONTAL or Image::VERTICAL
-     */
     protected function _do_flip($direction)
     {
         $flip_command = ($direction === Image::HORIZONTAL) ? '-flop': '-flip';
@@ -257,13 +227,6 @@ class Image_ImageMagick extends Image
         return FALSE;
     }
 
-    /**
-     * Create a reflect of the image and merge them
-     * 
-     * @param integer $height of the reflex image
-     * @param integer $opacity transparency level
-     * @param boolean $fade_in invert direction of transparency
-     */
     protected function _do_reflection($height, $opacity, $fade_in)
     {
         // Convert an opacity range of 0-100 to 255-0
@@ -346,14 +309,6 @@ class Image_ImageMagick extends Image
         return TRUE;
     }
 
-    /**
-     * Add a watermark
-     * 
-     * @param Image $image watermark
-     * @param <type> $offset_x
-     * @param <type> $offset_y
-     * @param <type> $opacity transparency level
-     */
     protected function _do_watermark(Image $image, $offset_x, $offset_y, $opacity)
     {
         $filein =  (! is_null($this->filetmp) ) ? $this->filetmp : $this->file;
@@ -398,14 +353,6 @@ class Image_ImageMagick extends Image
         return TRUE;
     }
 
-    /**
-     * Apply a background color (only if the front image has transparency)
-     * 
-     * @param <type> $r red component
-     * @param <type> $g green component
-     * @param <type> $b blue component
-     * @param <type> $opacity transparency level
-     */
     protected function _do_background($r, $g, $b, $opacity)
     {
         $opacity = $opacity / 100;
@@ -442,12 +389,6 @@ class Image_ImageMagick extends Image
         return FALSE;
     }
     
-    /**
-     * Save the image to a file
-     * 
-     * @param string $file path or filename of new image file
-     * @param integer $quality quality level of new image
-     */
     protected function _do_save($file, $quality)
     {
         // If tmp image file not exist, use original
@@ -467,13 +408,6 @@ class Image_ImageMagick extends Image
         return FALSE;
     }
     
-    /**
-     * Return RAW (bytes) image
-     * 
-     * @param string $type any image type support by ImageMagick {@link http://imagemagick.org/script/formats.php IM Formats}
-     * @param integer $quality quality of image
-     * @return byte raw image
-     */
     protected function _do_render($type, $quality)
     {
         $tmpfile = tempnam(sys_get_temp_dir(), '');
@@ -505,8 +439,9 @@ class Image_ImageMagick extends Image
 
     /**
      * Return a especified command for the current OS
-     * @param string $command
-     * @return string command in current OS
+     *
+     * @param   string  command
+     * @return  string  command translated for current OS
      */
     protected static function get_command($command)
     {
@@ -526,8 +461,8 @@ class Image_ImageMagick extends Image
     /**
      * Get and return file info
      *
-     * @param string $file path to file
-     * @return object file info
+     * @param   string    path to file
+     * @return  object  file info
      */
     private function get_info($file)
     {
@@ -561,9 +496,6 @@ class Image_ImageMagick extends Image
         return $return;
     }
 
-    /**
-     * Class destructor
-     */
     public function __destruct()
     {
         if ( ! is_null($this->filetmp) )
