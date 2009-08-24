@@ -398,7 +398,49 @@ class Image_ImageMagick extends Image
         return TRUE;
     }
 
-    protected function _do_background($r, $g, $b, $opacity){}
+    /**
+     * Apply a background color (only if the front image has transparency)
+     * 
+     * @param <type> $r red component
+     * @param <type> $g green component
+     * @param <type> $b blue component
+     * @param <type> $opacity transparency level
+     */
+    protected function _do_background($r, $g, $b, $opacity)
+    {
+        $opacity = $opacity / 100;
+
+        $filein =  (! is_null($this->filetmp) ) ? $this->filetmp : $this->file;
+
+        $fileout = tempnam(sys_get_temp_dir(), '');
+
+        $command = Image_ImageMagick::get_command('convert')." \"$filein\"";
+        $command .= " -quality 100 -background \"rgba($r, $g, $b, $opacity)\" -flatten";
+        $command .= ' "PNG:'.$fileout.'"';
+
+        exec($command, $response, $status);
+
+        if ( ! $status )
+        {
+            // Delete old tmp file if exist
+            if ( ! is_null($this->filetmp) )
+            {
+                unlink($this->filetmp);
+            }
+
+            // Get the image information
+            $info = $this->get_info($fileout);
+
+            // Update image data
+            $this->filetmp = $fileout;
+            $this->width = $info->width;
+            $this->height = $info->height;
+
+            return TRUE;
+        }
+
+        return FALSE;
+    }
     
     /**
      * Save the image to a file
@@ -541,5 +583,4 @@ class Image_ImageMagick extends Image
         return $this->filetmp;
     }
 }
-
 ?>
