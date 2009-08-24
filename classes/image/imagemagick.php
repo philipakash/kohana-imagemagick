@@ -346,7 +346,58 @@ class Image_ImageMagick extends Image
         return TRUE;
     }
 
-    protected function _do_watermark(Image $image, $offset_x, $offset_y, $opacity){}
+    /**
+     * Add a watermark
+     * 
+     * @param Image $image watermark
+     * @param <type> $offset_x
+     * @param <type> $offset_y
+     * @param <type> $opacity transparency level
+     */
+    protected function _do_watermark(Image $image, $offset_x, $offset_y, $opacity)
+    {
+        $filein =  (! is_null($this->filetmp) ) ? $this->filetmp : $this->file;
+        
+        // Create temporary file to store the watermark image
+        $watermark = tempnam(sys_get_temp_dir(), '');
+        $fp = fopen($watermark, 'wb');
+
+        if ( ! fwrite($fp, $image->render()))
+        {
+            return FALSE;
+        }
+
+        // Merge watermark with image
+        $fileout = tempnam(sys_get_temp_dir(), '');
+        
+        $command = Image_ImageMagick::get_command('composite');
+        $command .= ' -quality 100 -dissolve '.$opacity.'% -geometry +'.$offset_x.'+'.$offset_y;
+        $command .= ' "'.$watermark.'" "'.$filein.'"';
+        $command .= ' "PNG:'.$fileout.'"'; //save as PNG to keep transparency
+
+        exec($command, $response, $status);
+
+        if ($status)
+        {
+            return FALSE;
+        }
+
+        // Delete temp files and close handlers
+        fclose($fp);
+        unlink($watermark);
+
+        // Delete old tmp file if exist
+        if ( ! is_null($this->filetmp) )
+        {
+            unlink($this->filetmp);
+        }
+
+        // Update image data
+        $this->filetmp = $fileout;
+
+        return TRUE;
+    }
+
     protected function _do_background($r, $g, $b, $opacity){}
     
     /**
