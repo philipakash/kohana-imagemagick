@@ -3,7 +3,7 @@
  * Image manipulation class using {@link  http://imagemagick.org ImageMagick}.
  *
  * @package    Image
- * @author     Kohana Team
+ * @author     Javier Aranda <internet@javierav.com>
  * @copyright  (c) 2008-2009 Kohana Team
  * @license    http://kohanaphp.com/license.html
  */
@@ -257,7 +257,95 @@ class Image_ImageMagick extends Image
         return FALSE;
     }
 
-    protected function _do_reflection($height, $opacity, $fade_in){}
+    /**
+     * Create a reflect of the image and merge them
+     * 
+     * @param integer $height of the reflex image
+     * @param integer $opacity transparency level
+     * @param boolean $fade_in invert direction of transparency
+     */
+    protected function _do_reflection($height, $opacity, $fade_in)
+    {
+        // Convert an opacity range of 0-100 to 255-0
+	$opacity = round(abs(($opacity * 255 / 100)));
+
+        $filein =  (! is_null($this->filetmp) ) ? $this->filetmp : $this->file;
+
+        // Create the reflect image from current image
+        $reflect_image = Image::factory($filein, 'ImageMagick');
+
+        // Crop the image to $height of reflect starting by bottom
+        $reflect_image->crop($reflect_image->width, $height, 0, true);
+
+        // Flip the reflect image vertically
+        $reflect_image->flip(Image::VERTICAL);
+
+        // Create alpha channel
+        $alpha = tempnam(sys_get_temp_dir(), '');
+
+        $gradient = ($fade_in) ? "\"rgb(0,0,0)-rgb($opacity,$opacity,$opacity)\"" : "\"rgb($opacity,$opacity,$opacity)-rgb(0,0,0)\"";
+
+        $command = Image_ImageMagick::get_command('convert');
+        $command .= ' -quality 100 -size '.$this->width.'x'.$height.' gradient:'.$gradient;
+        $command .= ' "PNG:'.$alpha.'"';
+
+        exec($command, $response, $status);
+
+        if ($status)
+        {
+            return FALSE;
+        }
+
+        // Apply alpha channel
+        $tmpfile = tempnam(sys_get_temp_dir(), '');
+
+        $command = Image_ImageMagick::get_command('convert').' "'.$reflect_image->get_file_path().'" "'.$alpha.'"';
+        $command .= ' -quality 100 -alpha Off -compose Copy_Opacity -composite';
+        $command .= ' "PNG:'.$tmpfile.'"';
+
+        exec($command, $response, $status);
+
+        if ($status)
+        {
+            return FALSE;
+        }
+
+        // Merge image with their reflex
+        $fileout = tempnam(sys_get_temp_dir(), '');
+
+        $command = Image_ImageMagick::get_command('convert')." \"$filein\" \"$tmpfile\"";
+        $command .= ' -quality 100 -append ';
+        $command .= ' "PNG:'.$fileout.'"'; //save as PNG to keep transparency
+
+        exec($command, $response, $status);
+
+        if ($status)
+        {
+            return FALSE;
+        }
+
+        //delete temporary images
+        unset($reflect_image);
+        unlink($alpha);
+        unlink($tmpfile);
+
+        // Delete old tmp file if exist
+        if ( ! is_null($this->filetmp) )
+        {
+            unlink($this->filetmp);
+        }
+
+        // Get the image information
+        $info = $this->get_info($fileout);
+
+        // Update image data
+        $this->filetmp = $fileout;
+        $this->width = $info->width;
+        $this->height = $info->height;
+
+        return TRUE;
+    }
+
     protected function _do_watermark(Image $image, $offset_x, $offset_y, $opacity){}
     protected function _do_background($r, $g, $b, $opacity){}
     
@@ -390,6 +478,16 @@ class Image_ImageMagick extends Image
             // Free all resources
             unlink($this->filetmp);
         }
+    }
+
+    /**
+     * Get the file path
+     * 
+     * @return string file path
+     */
+    public function get_file_path()
+    {
+        return $this->filetmp;
     }
 }
 
