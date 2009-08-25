@@ -57,9 +57,9 @@ class Image_ImageMagick extends Image
         // Create a temporary file to store the new image
         $fileout = tempnam(sys_get_temp_dir(), '');
 
-        $command = Image_ImageMagick::get_command('convert')." \"$filein\"";
-        $command .= ' -quality 100 -geometry '.$width.'x'.$height.'\!';
-        $command .= ' "'.$fileout.'"';
+        $command = Image_ImageMagick::get_command('convert').' '.escapeshellarg($filein);
+        $command .= ' -quality 100 -geometry '.escapeshellarg($width).'x'.escapeshellarg($height).'\!';
+        $command .= ' '.escapeshellarg($fileout);
 
         exec($command, $response, $status);
 
@@ -89,9 +89,9 @@ class Image_ImageMagick extends Image
         // Create a temporary file to store the new image
         $fileout = tempnam(sys_get_temp_dir(), '');
 
-        $command = Image_ImageMagick::get_command('convert')." \"$filein\"";
-        $command .= ' -quality 100 -crop '.$width.'x'.$height.'+'.$offset_x.'+'.$offset_y;
-        $command .= ' "'.$fileout.'"';
+        $command = Image_ImageMagick::get_command('convert').' '.escapeshellarg($filein);
+        $command .= ' -quality 100 -crop '.escapeshellarg($width).'x'.escapeshellarg($height).'+'.escapeshellarg($offset_x).'+'.escapeshellarg($offset_y);
+        $command .= ' '.escapeshellarg($fileout);
 
         exec($command, $response, $status);
 
@@ -124,9 +124,9 @@ class Image_ImageMagick extends Image
         // Create a temporary file to store the new image
         $fileout = tempnam(sys_get_temp_dir(), '');
 
-        $command = Image_ImageMagick::get_command('convert')." \"$filein\"";
-        $command .= ' -quality 100 -matte -background none -rotate '.$degrees;
-        $command .= ' "PNG:'.$fileout.'"'; // Save as PNG for transparency
+        $command = Image_ImageMagick::get_command('convert').' '.escapeshellarg($filein);
+        $command .= ' -quality 100 -matte -background none -rotate '.escapeshellarg($degrees);
+        $command .= ' '.escapeshellarg('PNG:'.$fileout); // Save as PNG for transparency
 
         exec($command, $response, $status);
 
@@ -163,9 +163,9 @@ class Image_ImageMagick extends Image
         // Create a temporary file to store the new image
         $fileout = tempnam(sys_get_temp_dir(), '');
 
-        $command = Image_ImageMagick::get_command('convert')." \"$filein\"";
+        $command = Image_ImageMagick::get_command('convert').' '.escapeshellarg($filein);
         $command .= ' -quality 100 '.$flip_command;
-        $command .= ' "'.$fileout.'"';
+        $command .= ' '.escapeshellarg($fileout);
 
         exec($command, $response, $status);
 
@@ -199,9 +199,9 @@ class Image_ImageMagick extends Image
         // Create a temporary file to store the new image
         $fileout = tempnam(sys_get_temp_dir(), '');
 
-        $command = Image_ImageMagick::get_command('convert')." \"$filein\"";
+        $command = Image_ImageMagick::get_command('convert').' '.escapeshellarg($filein);
         $command .= ' -quality 100 -sharpen 0x'.$amount;
-        $command .= ' "'.$fileout.'"';
+        $command .= ' '.escapeshellarg($fileout);
 
         exec($command, $response, $status);
 
@@ -246,11 +246,11 @@ class Image_ImageMagick extends Image
         // Create alpha channel
         $alpha = tempnam(sys_get_temp_dir(), '');
 
-        $gradient = ($fade_in) ? "\"rgb(0,0,0)-rgb($opacity,$opacity,$opacity)\"" : "\"rgb($opacity,$opacity,$opacity)-rgb(0,0,0)\"";
+        $gradient = ($fade_in) ? "rgb(0,0,0)-rgb($opacity,$opacity,$opacity)" : "rgb($opacity,$opacity,$opacity)-rgb(0,0,0)";
 
         $command = Image_ImageMagick::get_command('convert');
-        $command .= ' -quality 100 -size '.$this->width.'x'.$height.' gradient:'.$gradient;
-        $command .= ' "PNG:'.$alpha.'"';
+        $command .= ' -quality 100 -size '.escapeshellarg($this->width).'x'.escapeshellarg($height).' gradient:'.escapeshellarg($gradient);
+        $command .= ' '.escapeshellarg('PNG:'.$alpha);
 
         exec($command, $response, $status);
 
@@ -262,9 +262,9 @@ class Image_ImageMagick extends Image
         // Apply alpha channel
         $tmpfile = tempnam(sys_get_temp_dir(), '');
 
-        $command = Image_ImageMagick::get_command('convert').' "'.$reflect_image->get_file_path().'" "'.$alpha.'"';
+        $command = Image_ImageMagick::get_command('convert').' '.escapeshellarg($reflect_image->get_file_path()).' '.escapeshellarg($alpha);
         $command .= ' -quality 100 -alpha Off -compose Copy_Opacity -composite';
-        $command .= ' "PNG:'.$tmpfile.'"';
+        $command .= ' '.escapeshellarg('PNG:'.$tmpfile);
 
         exec($command, $response, $status);
 
@@ -276,9 +276,9 @@ class Image_ImageMagick extends Image
         // Merge image with their reflex
         $fileout = tempnam(sys_get_temp_dir(), '');
 
-        $command = Image_ImageMagick::get_command('convert')." \"$filein\" \"$tmpfile\"";
+        $command = Image_ImageMagick::get_command('convert').' '.escapeshellarg($filein).' '.escapeshellarg($tmpfile);
         $command .= ' -quality 100 -append ';
-        $command .= ' "PNG:'.$fileout.'"'; //save as PNG to keep transparency
+        $command .= ' '.escapeshellarg('PNG:'.$fileout); //save as PNG to keep transparency
 
         exec($command, $response, $status);
 
@@ -326,9 +326,9 @@ class Image_ImageMagick extends Image
         $fileout = tempnam(sys_get_temp_dir(), '');
         
         $command = Image_ImageMagick::get_command('composite');
-        $command .= ' -quality 100 -dissolve '.$opacity.'% -geometry +'.$offset_x.'+'.$offset_y;
-        $command .= ' "'.$watermark.'" "'.$filein.'"';
-        $command .= ' "PNG:'.$fileout.'"'; //save as PNG to keep transparency
+        $command .= ' -quality 100 -dissolve '.escapeshellarg($opacity).'% -geometry +'.escapeshellarg($offset_x).'+'.escapeshellarg($offset_y);
+        $command .= ' '.escapeshellarg($watermark).' '.escapeshellarg($filein);
+        $command .= ' '.escapeshellarg('PNG:'.$fileout); //save as PNG to keep transparency
 
         exec($command, $response, $status);
 
@@ -361,9 +361,9 @@ class Image_ImageMagick extends Image
 
         $fileout = tempnam(sys_get_temp_dir(), '');
 
-        $command = Image_ImageMagick::get_command('convert')." \"$filein\"";
-        $command .= " -quality 100 -background \"rgba($r, $g, $b, $opacity)\" -flatten";
-        $command .= ' "PNG:'.$fileout.'"';
+        $command = Image_ImageMagick::get_command('convert').' '.escapeshellarg($filein);
+        $command .= " -quality 100 -background ".escapeshellarg("rgba($r, $g, $b, $opacity)").' -flatten';
+        $command .= ' '.escapeshellarg('PNG:'.$fileout);
 
         exec($command, $response, $status);
 
@@ -394,9 +394,9 @@ class Image_ImageMagick extends Image
         // If tmp image file not exist, use original
         $filein =  (! is_null($this->filetmp) ) ? $this->filetmp : $this->file;
 
-        $command = Image_ImageMagick::get_command('convert')." \"$filein\"";
-        $command .= (isset($quality)) ? ' -quality '.$quality : '';
-        $command .= ' "'.$file.'"';
+        $command = Image_ImageMagick::get_command('convert').' '.escapeshellarg($filein);
+        $command .= (isset($quality)) ? ' -quality '.escapeshellarg($quality) : '';
+        $command .= ' '.escapeshellarg($file);
 
         exec($command, $response, $status);
 
@@ -415,9 +415,9 @@ class Image_ImageMagick extends Image
         // If tmp image file not exist, use original
         $filein = ( ! is_null($this->filetmp) ) ? $this->filetmp : $this->file;
 
-        $command = Image_ImageMagick::get_command('convert')." \"$filein\"";
-        $command .= (isset($quality)) ? ' -quality '.$quality : '';
-        $command .= ' "'.strtoupper($type).':'.$tmpfile.'"';
+        $command = Image_ImageMagick::get_command('convert').' '.escapeshellarg($filein);
+        $command .= (isset($quality)) ? ' -quality '.escapeshellarg($quality) : '';
+        $command .= ' '.escapeshellarg(strtoupper($type).':'.$tmpfile);
 
         exec($command, $response, $status);
 
