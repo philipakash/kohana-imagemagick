@@ -7,7 +7,7 @@
  * @copyright  (c) 2008-2009 Kohana Team
  * @license    http://kohanaphp.com/license.html
  */
-class Image_ImageMagick extends Image
+class Kohana_Image_ImageMagick extends Image
 {
     /**
      * @var  string  path to ImageMagick binaries
