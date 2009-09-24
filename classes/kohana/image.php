@@ -20,11 +20,6 @@ abstract class Kohana_Image {
 	const HORIZONTAL = 0x11;
 	const VERTICAL   = 0x12;
 
-	/**
-	 * @var  string  default driver: GD, ImageMagick, etc
-	 */
-	public static $default_driver = 'GD';
-
 	// Status of the driver check
 	protected static $_checked = FALSE;
 
@@ -40,7 +35,7 @@ abstract class Kohana_Image {
 		if ($driver === NULL)
 		{
 			// Use the default driver
-			$driver = Image::$default_driver;
+			$driver = Kohana::Config('image')->driver;
 		}
 
 		// Set the class name
