@@ -20,14 +20,7 @@ class Kohana_Image_ImageMagick extends Image
     protected $filetmp;
     
     public static function check()
-    {
-        exec(Image_ImageMagick::get_command('convert'), $response);
-
-        if ($status)
-        {
-            throw new Kohana_Exception('ImageMagick is not installed in :path, check your configuration', array(':path'=>Image_ImageMagick::$_imagemagick));
-        }
-
+    {        
         return Image_ImageMagick::$_checked = TRUE;
     }
 
