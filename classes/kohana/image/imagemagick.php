@@ -21,7 +21,7 @@ class Kohana_Image_ImageMagick extends Image
     
     public static function check()
     {
-        exec(Image_ImageMagick::get_command('convert'), $response, $status);
+        exec(Image_ImageMagick::get_command('convert'), $response);
 
         if ($status)
         {
@@ -58,7 +58,7 @@ class Kohana_Image_ImageMagick extends Image
         $fileout = tempnam(sys_get_temp_dir(), '');
 
         $command = Image_ImageMagick::get_command('convert').' '.escapeshellarg($filein);
-        $command .= ' -quality 100 -geometry '.escapeshellarg($width).'x'.escapeshellarg($height).'\!';
+        $command .= ' -quality 100 -geometry '.escapeshellarg($width).'x'.escapeshellarg($height);
         $command .= ' '.escapeshellarg($fileout);
 
         exec($command, $response, $status);
